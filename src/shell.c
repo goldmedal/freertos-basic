@@ -24,6 +24,7 @@ void help_command(int, char **);
 void host_command(int, char **);
 void mmtest_command(int, char **);
 void test_command(int, char **);
+void new_command(int, char **);
 void _command(int, char **);
 
 #define MKCL(n, d) {.name=#n, .fptr=n ## _command, .desc=d}
@@ -37,6 +38,7 @@ cmdlist cl[]={
 	MKCL(mmtest, "heap memory allocation test"),
 	MKCL(help, "help"),
 	MKCL(test, "test new function"),
+    MKCL(new, "build a new freeRTOS task"),
 	MKCL(, ""),
 };
 
@@ -184,6 +186,38 @@ void test_command(int n, char *argv[]) {
     }
 
     host_action(SYS_CLOSE, handle);
+
+    int result = 1;
+    int previous = -1;
+    int i = 0;
+    int sum = 0;
+    int num = 5;
+    
+    for(i=0;i<num;i++){
+        
+        sum = result + previous;
+        previous = result;
+        result = sum;
+
+    }
+ 
+    fio_printf(1, "the %d th of Fibonacci is %d\n\r", num, sum);
+
+}
+
+void test_new(){
+    int i=0;
+    while(1){
+        i++;
+    }
+}
+
+void new_command(int n, char *argv[]){
+
+    xTaskHandle xHandle;  
+    xTaskCreate(test_new,
+            (signed portCHAR *) "new", 
+            256, NULL, 0, &xHandle); 
 }
 
 void _command(int n, char *argv[]){
