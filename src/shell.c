@@ -24,10 +24,50 @@ void help_command(int, char **);
 void host_command(int, char **);
 void mmtest_command(int, char **);
 void test_command(int, char **);
+void test1_command(int, char **);
 void new_command(int, char **);
 void _command(int, char **);
 
 #define MKCL(n, d) {.name=#n, .fptr=n ## _command, .desc=d}
+
+void system1_logger(void *pvParameters)
+{
+    signed char buf[128];
+    char output[512] = {0};
+    char *tag = "\nName          State   Priority  Stack  Num\n*******************************************\n";
+    int handle, error;
+    const portTickType xDelay = 100000 / 100;
+
+    handle = host_action(SYS_OPEN, "output/syslog", 4);
+    if(handle == -1) {
+        fio_printf(1, "Open file error!\n");
+        return;
+    }
+
+    while(1) {
+        memcpy(output, tag, strlen(tag));
+        error = host_action(SYS_WRITE, handle, (void *)output, strlen(output));
+        if(error != 0) {
+            fio_printf(1, "Write file error! Remain %d bytes didn't write in the file.\n\r", error);
+            host_action(SYS_CLOSE, handle);
+            return;
+        }
+        vTaskList(buf);
+
+        memcpy(output, (char *)(buf + 2), strlen((char *)buf) - 2);
+
+        error = host_action(SYS_WRITE, handle, (void *)buf, strlen((char *)buf));
+        if(error != 0) {
+            fio_printf(1, "Write file error! Remain %d bytes didn't write in the file.\n\r", error);
+            host_action(SYS_CLOSE, handle);
+            return;
+        }
+
+        vTaskDelay(xDelay);
+    }
+    
+    host_action(SYS_CLOSE, handle);
+}
 
 cmdlist cl[]={
 	MKCL(ls, "List directory"),
@@ -39,6 +79,7 @@ cmdlist cl[]={
 	MKCL(help, "help"),
 	MKCL(test, "test new function"),
     MKCL(new, "build a new freeRTOS task"),
+    MKCL(test1, "build a new freeRTOS task11"),
 	MKCL(, ""),
 };
 
@@ -218,6 +259,14 @@ void new_command(int n, char *argv[]){
     xTaskCreate(test_new,
             (signed portCHAR *) "new", 
             256, NULL, 0, &xHandle); 
+}
+
+void test1_command(int n, char *argv[]){
+
+	xTaskCreate(system1_logger,
+	            (signed portCHAR *) "Logger",
+	            1024 /* stack size */, NULL, tskIDLE_PRIORITY + 1, NULL);
+
 }
 
 void _command(int n, char *argv[]){
